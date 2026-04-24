@@ -1,7 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'blogdobagada.com.br',
+      },
+      {
+        protocol: 'https',
+        hostname: 'secureservercdn.net', // Adiciona este também por precaução
+      }
+    ],
+  },
 };
 
 export default nextConfig;
