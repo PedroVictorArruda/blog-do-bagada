@@ -56,7 +56,71 @@ export interface WpComment {
   };
 }
 
-const API_URL = 'https://blogdobagada.com.br/?rest_route=/wp/v2';
+export interface WpBanner {
+  id: number;
+  title: { rendered: string };
+  acf?: { url_do_link?: string };
+  _embedded?: {
+    'wp:featuredmedia'?: WpMedia[];
+  };
+}
+
+const API_URL = 'http://blogdobagada.com.br/?rest_route=/wp/v2';
+
+/**
+/**
+ * Busca banners a partir de uma página fixa do WP chamada "Gerenciar Banners" (slug: gerenciar-banners)
+ * A equipe usará o ACF (Advanced Custom Fields) nesta página para fazer o upload de forma super intuitiva.
+ */
+export async function getBannersByFormat(format: string): Promise<{ imageUrl: string; linkUrl: string } | null> {
+  try {
+    // Busca a página específica de configuração pelo slug
+    const response = await fetch(`${API_URL}/pages&slug=gerenciar-banners&_fields=acf`, {
+      next: { revalidate: 60 },
+    });
+
+    if (!response.ok) return null;
+
+    const pages = await response.json();
+    if (!pages || pages.length === 0 || !pages[0].acf) return null;
+
+    const acf = pages[0].acf;
+    
+    // O ACF retornará os campos com base no formato
+    let imageUrl = acf[`banner_${format}_imagem`];
+    const linkUrl = acf[`banner_${format}_link`];
+
+    if (!imageUrl) return null;
+
+    // Se o ACF retornar apenas o ID da imagem (ex: 17742), precisamos buscar a URL dessa imagem
+    if (typeof imageUrl === 'number') {
+      try {
+        const mediaRes = await fetch(`${API_URL}/media/${imageUrl}`, {
+          next: { revalidate: 60 },
+        });
+        if (mediaRes.ok) {
+          const mediaData = await mediaRes.json();
+          imageUrl = mediaData.source_url;
+        } else {
+          return null;
+        }
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // ACF pode retornar a URL direta (string) ou um objeto (Image Array) se configurado diferente
+    const finalImageUrl = typeof imageUrl === 'string' ? imageUrl : imageUrl.url;
+
+    return {
+      imageUrl: finalImageUrl,
+      linkUrl: linkUrl || '#'
+    };
+  } catch (error) {
+    console.error('Erro ao buscar banners via página ACF:', error);
+    return null;
+  }
+}
 
 /**
  * Busca os posts mais recentes do WordPress
@@ -77,6 +141,30 @@ export async function getLatestPosts(limit: number = 10): Promise<WpPost[]> {
   } catch (error) {
     console.error('Erro em getLatestPosts:', error);
     throw new Error('Falha ao obter os últimos posts. Verifique a conexão com o WordPress.');
+  }
+}
+
+/**
+ * Busca os posts mais populares usando o plugin WordPress Popular Posts
+ */
+export async function getPopularPosts(limit: number = 5, range: string = 'last7days'): Promise<WpPost[]> {
+  try {
+    const wppApiUrl = API_URL.replace('/wp/v2', '/wordpress-popular-posts/v1/popular-posts');
+    const response = await fetch(`${wppApiUrl}&limit=${limit}&range=${range}`, {
+      next: { revalidate: 3600 }, // Cache de 1 hora
+    });
+
+    if (!response.ok) {
+      console.warn(`Erro na API do WPP: ${response.status} - ${response.statusText}. Usando fallback para últimos posts.`);
+      return getLatestPosts(limit);
+    }
+
+    const posts: WpPost[] = await response.json();
+    return posts;
+  } catch (error) {
+    console.error('Erro em getPopularPosts:', error);
+    // Fallback caso o plugin seja desativado ou dê erro
+    return getLatestPosts(limit);
   }
 }
 

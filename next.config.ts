@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
         hostname: 'blogdobagada.com.br',
       },
       {
+        protocol: 'http',
+        hostname: 'blogdobagada.com.br',
+      },
+      {
         protocol: 'https',
         hostname: 'secureservercdn.net', // Adiciona este também por precaução
       }

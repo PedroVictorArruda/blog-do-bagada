@@ -1,5 +1,5 @@
 import React from "react";
-import { getPostsPaginated, getLatestPosts, getCategories } from "@/lib/wp";
+import { getPostsPaginated, getLatestPosts, getPopularPosts, getCategories } from "@/lib/wp";
 import FeaturedSwiper from "@/components/FeaturedSwiper";
 import PostCard from "@/components/PostCard";
 import Sidebar from "@/components/Sidebar";
@@ -21,7 +21,7 @@ export default async function Home({
 
   const [{ posts, totalPages }, popularPosts, categories] = await Promise.all([
     getPostsPaginated(currentPage, PER_PAGE),
-    getLatestPosts(4),
+    getPopularPosts(5, 'last7days'),
     getCategories(),
   ]);
 

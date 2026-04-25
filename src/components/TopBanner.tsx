@@ -19,12 +19,13 @@ export default function TopBanner() {
         </div>
 
         {/* Banner Desktop — visível apenas em telas médias e maiores */}
-        <div className="hidden md:block h-24 relative">
+        <div className="hidden md:block w-full">
           <Image
-            src="/banner-desktop.png"
+            src="/banner-desktop.jpeg"
             alt="Banner"
-            fill
-            className="object-cover object-center"
+            width={1920}
+            height={100}
+            className="w-full h-auto"
             priority
             sizes="100vw"
           />

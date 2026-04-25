@@ -35,7 +35,7 @@ export default function Sidebar({ popularPosts = [], categories = [] }: SidebarP
             <TrendingUp className="w-5 h-5 mr-2 text-blue-600" /> Em Alta
           </h3>
           <div className="space-y-6">
-            {popularPosts.slice(0, 4).map((post, idx) => (
+            {popularPosts.slice(0, 5).map((post, idx) => (
               <Link key={post.id} href={`/${post.slug}`} className="group flex gap-4 items-start">
                 <span className="text-3xl font-extrabold text-gray-200 group-hover:text-blue-500 transition-colors">
                   0{idx + 1}

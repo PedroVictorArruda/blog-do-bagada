@@ -20,13 +20,13 @@ export default function Header({ categories = [] }: HeaderProps) {
 
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
-            <Link href="/">
+            <Link href="/" className="block">
               <Image
                 src="/logo.png"
                 alt="Bagadão"
-                width={280}
-                height={90}
-                className="h-16 w-auto object-contain"
+                width={600}
+                height={600}
+                className="h-16 md:h-24 w-auto object-contain scale-125 md:scale-150 origin-left"
                 priority
               />
             </Link>
