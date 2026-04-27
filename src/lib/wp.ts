@@ -121,7 +121,7 @@ export async function getBannersByFormat(format: string, slotIndex?: number): Pr
     const finalImageUrl = typeof imageUrl === 'string' ? imageUrl : imageUrl?.url;
 
     return {
-      imageUrl: finalImageUrl,
+      imageUrl: fixMediaUrl(finalImageUrl),
       linkUrl: linkUrl || '#',
     };
   } catch (error) {

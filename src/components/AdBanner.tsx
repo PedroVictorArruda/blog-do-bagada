@@ -38,5 +38,9 @@ export default async function AdBanner({ format, className = '', slotIndex }: Ad
     );
   }
 
-  return null;
+  return (
+    <div className={`block overflow-hidden relative ${dimensions[format]} ${className} bg-gray-200 animate-pulse flex items-center justify-center rounded`}>
+      <span className="text-gray-400 text-xs uppercase tracking-widest">Publicidade</span>
+    </div>
+  );
 }
