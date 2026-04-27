@@ -53,14 +53,19 @@ export default async function Home({
           </div>
 
           <div className="flex flex-col gap-6">
-            {listPosts.map((post, index) => (
-              <React.Fragment key={post.id}>
-                <PostCard post={post} />
-                {(index + 1) % AD_EVERY === 0 && (
-                  <AdBanner format="horizontal" />
-                )}
-              </React.Fragment>
-            ))}
+            {listPosts.map((post, index) => {
+              const showAd = (index + 1) % AD_EVERY === 0;
+              const slotIndex = showAd ? Math.floor((index + 1) / AD_EVERY) : undefined;
+
+              return (
+                <React.Fragment key={post.id}>
+                  <PostCard post={post} />
+                  {showAd && (
+                    <AdBanner format="horizontal" slotIndex={slotIndex} />
+                  )}
+                </React.Fragment>
+              );
+            })}
           </div>
 
           {/* Paginação */}

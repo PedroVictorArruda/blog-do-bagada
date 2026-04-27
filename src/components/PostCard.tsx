@@ -75,6 +75,7 @@ export default function PostCard({ post }: PostCardProps) {
           src={getFeaturedImageUrl(post)}
           alt="Capa do post"
           fill
+          sizes="(max-width: 768px) 100vw, 320px"
           className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </Link>
@@ -83,7 +84,7 @@ export default function PostCard({ post }: PostCardProps) {
       <div className="flex flex-col flex-grow p-5 md:p-6">
         {/* Metadata */}
         <div className="flex items-center gap-3 mb-3 text-xs">
-          <span className="font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+          <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
             {categoryName}
           </span>
           <span className="text-gray-400">{date}</span>

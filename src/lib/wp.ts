@@ -67,32 +67,33 @@ export interface WpBanner {
 
 const API_URL = 'http://blogdobagada.com.br/?rest_route=/wp/v2';
 
-/**
-/**
- * Busca banners a partir de uma página fixa do WP chamada "Gerenciar Banners" (slug: gerenciar-banners)
- * A equipe usará o ACF (Advanced Custom Fields) nesta página para fazer o upload de forma super intuitiva.
- */
-export async function getBannersByFormat(format: string): Promise<{ imageUrl: string; linkUrl: string } | null> {
+export async function getBannersByFormat(format: string, slotIndex?: number): Promise<{ imageUrl: string; linkUrl: string } | null> {
   try {
-    // Busca a página específica de configuração pelo slug
-    const response = await fetch(`${API_URL}/pages&slug=gerenciar-banners&_fields=acf`, {
+    // Busca banners do CPT 'banners' (cada post = um banner/anunciante)
+    const response = await fetch(`${API_URL}/banner&_fields=id,acf&per_page=20`, {
       next: { revalidate: 60 },
     });
 
     if (!response.ok) return null;
 
-    const pages = await response.json();
-    if (!pages || pages.length === 0 || !pages[0].acf) return null;
+    const banners = await response.json();
+    if (!Array.isArray(banners) || banners.length === 0) return null;
 
-    const acf = pages[0].acf;
-    
-    // O ACF retornará os campos com base no formato
+    // Filtra banners que têm imagem para o formato solicitado
+    const validBanners = banners.filter((b: any) => b.acf && b.acf[`banner_${format}_imagem`]);
+    if (validBanners.length === 0) return null;
+
+    // Cicla pelos banners disponíveis para distribuir igualmente entre os slots
+    const index = ((slotIndex ?? 1) - 1) % validBanners.length;
+    const bannerData = validBanners[index];
+
+    const acf = bannerData.acf;
     let imageUrl = acf[`banner_${format}_imagem`];
-    const linkUrl = acf[`banner_${format}_link`];
+    let linkUrl = acf[`banner_${format}_link`];
 
     if (!imageUrl) return null;
 
-    // Se o ACF retornar apenas o ID da imagem (ex: 17742), precisamos buscar a URL dessa imagem
+    // Se o ACF retornar apenas o ID da imagem (ex: 17742), precisamos buscar a URL
     if (typeof imageUrl === 'number') {
       try {
         const mediaRes = await fetch(`${API_URL}/media/${imageUrl}`, {
@@ -104,20 +105,20 @@ export async function getBannersByFormat(format: string): Promise<{ imageUrl: st
         } else {
           return null;
         }
-      } catch (e) {
+      } catch {
         return null;
       }
     }
 
-    // ACF pode retornar a URL direta (string) ou um objeto (Image Array) se configurado diferente
-    const finalImageUrl = typeof imageUrl === 'string' ? imageUrl : imageUrl.url;
+    // ACF pode retornar URL string ou objeto com .url
+    const finalImageUrl = typeof imageUrl === 'string' ? imageUrl : imageUrl?.url;
 
     return {
       imageUrl: finalImageUrl,
-      linkUrl: linkUrl || '#'
+      linkUrl: linkUrl || '#',
     };
   } catch (error) {
-    console.error('Erro ao buscar banners via página ACF:', error);
+    console.error('Erro ao buscar banners via CPT:', error);
     return null;
   }
 }
@@ -160,10 +161,12 @@ export async function getPopularPosts(limit: number = 5, range: string = 'last7d
     }
 
     const posts: WpPost[] = await response.json();
+    if (posts.length < limit) {
+      return getLatestPosts(limit);
+    }
     return posts;
   } catch (error) {
     console.error('Erro em getPopularPosts:', error);
-    // Fallback caso o plugin seja desativado ou dê erro
     return getLatestPosts(limit);
   }
 }
@@ -335,7 +338,26 @@ export async function getComments(postId: number): Promise<WpComment[]> {
 }
 
 /**
- * Envia um novo comentário
+ * Busca posts relacionados pela mesma categoria, excluindo o post atual
+ */
+export async function getRelatedPosts(categoryId: number, excludePostId: number, limit: number = 4): Promise<WpPost[]> {
+  try {
+    const response = await fetch(
+      `${API_URL}/posts&_embed&categories=${categoryId}&exclude=${excludePostId}&per_page=${limit}`,
+      { next: { revalidate: 60 } }
+    );
+
+    if (!response.ok) return [];
+
+    return await response.json();
+  } catch (error) {
+    console.error('Erro em getRelatedPosts:', error);
+    return [];
+  }
+}
+
+/**
+ * Envia um novo comentário via rota proxy do Next.js (evita CORS)
  */
 export async function postComment(data: {
   post: number;
@@ -345,33 +367,19 @@ export async function postComment(data: {
   parent?: number;
 }): Promise<{ success: boolean; message: string }> {
   try {
-    // Usamos URLSearchParams pois alguns plugins de segurança do WP preferem o formato de form
-    const formData = new URLSearchParams();
-    formData.append('post', data.post.toString());
-    formData.append('author_name', data.author_name);
-    formData.append('author_email', data.author_email);
-    formData.append('content', data.content);
-    formData.append('parent', (data.parent || 0).toString());
-
-    const response = await fetch(`${API_URL}/comments`, {
+    const response = await fetch('/api/comments', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData.toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
     });
 
     const result = await response.json();
 
     if (response.ok) {
       return { success: true, message: 'Comentário enviado com sucesso! Ele aparecerá após ser aprovado pela moderação.' };
-    } else {
-      // Se o erro for sobre login, damos uma instrução clara
-      if (result.code === 'rest_comment_login_required') {
-        return { success: false, message: 'Erro: O WordPress está configurado para aceitar apenas comentários de usuários logados. Desative essa opção em Configurações > Discussão no painel do WP.' };
-      }
-      return { success: false, message: result.message || 'Erro ao enviar comentário.' };
     }
+
+    return { success: false, message: result.error || 'Erro ao enviar comentário.' };
   } catch (error) {
     console.error('Erro em postComment:', error);
     return { success: false, message: 'Erro de conexão ao enviar comentário.' };

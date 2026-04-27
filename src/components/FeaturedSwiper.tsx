@@ -35,7 +35,7 @@ export default function FeaturedSwiper({ posts }: FeaturedSwiperProps) {
         pagination={{ clickable: true }}
         autoplay={{ delay: 5000, disableOnInteraction: false }}
         loop={true}
-        className="h-[50vh] md:h-[550px] w-full"
+        className="h-[35vh] md:h-[550px] w-full"
       >
         {posts.map((post) => (
           <SwiperSlide key={post.id}>
@@ -44,18 +44,19 @@ export default function FeaturedSwiper({ posts }: FeaturedSwiperProps) {
                 src={getFeaturedImageUrl(post)}
                 alt="Destaque"
                 fill
+                sizes="100vw"
                 className="object-cover transition-transform duration-1000 group-hover:scale-105"
                 priority
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
               
-              <div className="absolute bottom-0 left-0 p-8 md:p-12 w-full md:w-3/4">
-                <span className="inline-block bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-4">
+              <div className="absolute bottom-0 left-0 p-5 md:p-12 w-full md:w-3/4">
+                <span className="inline-block bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2 md:mb-4">
                   {post._embedded?.['wp:term']?.[0]?.[0]?.name || "Notícia"}
                 </span>
                 <Link href={`/${post.slug}`}>
-                  <h1 
-                    className="text-3xl md:text-5xl font-extrabold text-white mb-4 leading-tight drop-shadow-lg hover:text-blue-300 transition-colors"
+                  <h1
+                    className="text-xl md:text-5xl font-extrabold text-white mb-2 md:mb-4 leading-tight drop-shadow-lg hover:text-blue-300 transition-colors"
                     dangerouslySetInnerHTML={{ __html: post.title.rendered }}
                   />
                 </Link>

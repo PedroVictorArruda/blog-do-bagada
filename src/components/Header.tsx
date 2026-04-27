@@ -16,7 +16,7 @@ export default function Header({ categories = [] }: HeaderProps) {
   return (
     <header className="bg-white sticky top-0 z-50 border-b border-gray-100 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-28">
+        <div className="flex justify-between items-center h-20 md:h-28">
 
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
@@ -26,7 +26,7 @@ export default function Header({ categories = [] }: HeaderProps) {
                 alt="Bagadão"
                 width={600}
                 height={600}
-                className="h-16 md:h-24 w-auto object-contain scale-125 md:scale-150 origin-left"
+                className="h-20 md:h-24 w-auto object-contain scale-125 md:scale-150 origin-left"
                 priority
               />
             </Link>

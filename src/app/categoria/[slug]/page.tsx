@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import React from "react";
 import { getCategoryBySlug, getPostsByCategory, getLatestPosts, getCategories } from "@/lib/wp";
 import PostCard from "@/components/PostCard";
@@ -7,7 +8,32 @@ import Pagination from "@/components/Pagination";
 import { Hash } from "lucide-react";
 import { notFound } from "next/navigation";
 
+const SITE_URL = 'https://blogdobagada.com.br';
 const AD_EVERY = 3;
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+  const { slug } = await params;
+  const category = await getCategoryBySlug(slug);
+  if (!category) return {};
+
+  const title = category.name;
+  const description = `Confira todas as notícias e artigos de ${category.name} no Blog do Bagada.`;
+  const url = `${SITE_URL}/categoria/${slug}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      url,
+      type: 'website',
+    },
+  };
+}
 
 export default async function CategoryPage({
   params,
@@ -62,7 +88,7 @@ export default async function CategoryPage({
                   <React.Fragment key={post.id}>
                     <PostCard post={post} />
                     {(index + 1) % AD_EVERY === 0 && (
-                      <AdBanner format="horizontal" />
+                      <AdBanner format="horizontal" slotIndex={Math.floor((index + 1) / AD_EVERY)} />
                     )}
                   </React.Fragment>
                 ))}

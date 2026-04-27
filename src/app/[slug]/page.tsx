@@ -1,11 +1,52 @@
+import type { Metadata } from "next";
 import Image from "next/image";
-import { getPostBySlug, getLatestPosts, getCategories, getComments } from "@/lib/wp";
+import Link from "next/link";
+import { getPostBySlug, getLatestPosts, getCategories, getComments, getRelatedPosts } from "@/lib/wp";
 import { notFound } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import AdBanner from "@/components/AdBanner";
 import Comments from "@/components/Comments";
 import { Link as LinkIcon, Clock, Calendar } from "lucide-react";
 import { getRelativeTime } from "@/lib/utils";
+
+const SITE_URL = 'https://blogdobagada.com.br';
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+}
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getPostBySlug(slug);
+  if (!post) return {};
+
+  const title = stripHtml(post.title.rendered);
+  const description = stripHtml(post.excerpt.rendered).slice(0, 160);
+  const imageUrl = post._embedded?.['wp:featuredmedia']?.[0]?.source_url;
+  const url = `${SITE_URL}/${slug}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      url,
+      type: 'article',
+      publishedTime: post.date,
+      images: imageUrl ? [{ url: imageUrl, width: 1200, height: 800, alt: title }] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: imageUrl ? [imageUrl] : [],
+    },
+  };
+}
 
 // SVGs das redes sociais
 const FacebookIcon = ({ className }: { className?: string }) => (
@@ -15,7 +56,7 @@ const FacebookIcon = ({ className }: { className?: string }) => (
 );
 const TwitterIcon = ({ className }: { className?: string }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
   </svg>
 );
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -32,11 +73,13 @@ export default async function SinglePost({ params }: { params: Promise<{ slug: s
     notFound();
   }
 
-  // Get some popular posts and categories for the sidebar, and comments for the post
-  const [popularPosts, categories, comments] = await Promise.all([
+  const categoryId = post._embedded?.['wp:term']?.[0]?.[0]?.id;
+
+  const [popularPosts, categories, comments, relatedPosts] = await Promise.all([
     getLatestPosts(5),
     getCategories(),
-    getComments(post.id)
+    getComments(post.id),
+    categoryId ? getRelatedPosts(categoryId, post.id, 4) : Promise.resolve([]),
   ]);
 
   const getFeaturedImageUrl = () => {
@@ -45,6 +88,32 @@ export default async function SinglePost({ params }: { params: Promise<{ slug: s
       return media[0].source_url;
     }
     return "https://via.placeholder.com/1200x800.png?text=Sem+Imagem";
+  };
+
+  const plainTitle = stripHtml(post.title.rendered);
+  const plainDescription = stripHtml(post.excerpt.rendered).slice(0, 160);
+  const featuredImageUrl = getFeaturedImageUrl();
+  const postUrl = `${SITE_URL}/${post.slug}`;
+
+  const blogPostingJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: plainTitle,
+    description: plainDescription,
+    image: featuredImageUrl,
+    datePublished: post.date,
+    url: postUrl,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': postUrl },
+    author: {
+      '@type': 'Person',
+      name: 'Bagadão',
+      url: SITE_URL,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Blog do Bagada',
+      url: SITE_URL,
+    },
   };
 
   const date = new Date(post.date).toLocaleDateString('pt-BR', {
@@ -57,6 +126,10 @@ export default async function SinglePost({ params }: { params: Promise<{ slug: s
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogPostingJsonLd) }}
+      />
       <div className="flex flex-col lg:flex-row gap-12">
 
         {/* Post Content */}
@@ -122,7 +195,7 @@ export default async function SinglePost({ params }: { params: Promise<{ slug: s
                   target="_blank" rel="noopener noreferrer"
                   className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center hover:bg-black transition-colors"
                 >
-                  <TwitterIcon className="w-5 h-5" />
+                  <TwitterIcon className="w-4 h-4" />
                 </a>
                 <a
                   href={`https://blogdobagada.com.br/${post.slug}`}
@@ -138,9 +211,10 @@ export default async function SinglePost({ params }: { params: Promise<{ slug: s
           {/* Imagem de Capa */}
           <div className="relative w-full h-[400px] md:h-[550px] rounded-3xl overflow-hidden mb-12 shadow-lg">
             <Image
-              src={getFeaturedImageUrl()}
-              alt="Capa do artigo"
+              src={featuredImageUrl}
+              alt={plainTitle}
               fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 80vw, 900px"
               className="object-cover"
               priority
             />
@@ -148,7 +222,7 @@ export default async function SinglePost({ params }: { params: Promise<{ slug: s
 
           {/* Ad Space Intro */}
           <div className="mb-10">
-            <AdBanner format="horizontal" />
+            <AdBanner format="horizontal" slotIndex={1} />
           </div>
 
           {/* Corpo do Artigo */}
@@ -166,15 +240,57 @@ export default async function SinglePost({ params }: { params: Promise<{ slug: s
             </div>
 
             {/* Ad Space Outro */}
-            <AdBanner format="horizontal" className="mb-12" />
+            <AdBanner format="horizontal" slotIndex={2} className="mb-12" />
 
             {/* Nova Seção de Comentários Integrada */}
-            <Comments 
-              postId={post.id} 
-              initialComments={comments} 
-              postTitle={post.title.rendered.replace(/<[^>]+>/g, '')} 
+            <Comments
+              postId={post.id}
+              initialComments={comments}
+              postTitle={post.title.rendered.replace(/<[^>]+>/g, '')}
             />
           </div>
+
+          {/* Notícias Relacionadas */}
+          {relatedPosts.length > 0 && (
+            <section className="mt-16">
+              <h2 className="text-2xl font-extrabold text-gray-900 mb-8 pb-4 border-b border-gray-200">
+                Notícias Relacionadas
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {relatedPosts.map((related) => {
+                  const thumb = related._embedded?.['wp:featuredmedia']?.[0]?.source_url;
+                  const relCat = related._embedded?.['wp:term']?.[0]?.[0]?.name;
+                  return (
+                    <Link key={related.id} href={`/${related.slug}`} className="group flex flex-col rounded-2xl overflow-hidden border border-gray-100 hover:shadow-md transition-shadow">
+                      <div className="relative h-44 bg-gray-100 overflow-hidden shrink-0">
+                        {thumb && (
+                          <Image
+                            src={thumb}
+                            alt={related.title.rendered.replace(/<[^>]+>/g, '')}
+                            fill
+                            sizes="(max-width: 640px) 100vw, 50vw"
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        )}
+                      </div>
+                      <div className="p-4 flex flex-col gap-2">
+                        {relCat && (
+                          <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">{relCat}</span>
+                        )}
+                        <h3
+                          className="text-sm font-bold text-gray-900 leading-snug line-clamp-3 group-hover:text-blue-600 transition-colors"
+                          dangerouslySetInnerHTML={{ __html: related.title.rendered }}
+                        />
+                        <span className="text-xs text-gray-400 mt-auto">
+                          {new Date(related.date).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+          )}
         </article>
 
         {/* Sidebar */}

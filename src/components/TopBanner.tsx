@@ -14,7 +14,7 @@ export default function TopBanner() {
             fill
             className="object-cover object-center"
             priority
-            sizes="100vw"
+            sizes="(max-width: 768px) 100vw, 0px"
           />
         </div>
 
