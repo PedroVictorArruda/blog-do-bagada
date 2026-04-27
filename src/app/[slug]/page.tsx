@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { getPostBySlug, getLatestPosts, getCategories, getComments, getRelatedPosts } from "@/lib/wp";
+import { getPostBySlug, getLatestPosts, getCategories, getComments, getRelatedPosts, fixMediaUrl } from "@/lib/wp";
 import { notFound } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import AdBanner from "@/components/AdBanner";
@@ -85,7 +85,7 @@ export default async function SinglePost({ params }: { params: Promise<{ slug: s
   const getFeaturedImageUrl = () => {
     const media = post._embedded?.['wp:featuredmedia'];
     if (media && media.length > 0 && media[0].source_url) {
-      return media[0].source_url;
+      return fixMediaUrl(media[0].source_url);
     }
     return "https://via.placeholder.com/1200x800.png?text=Sem+Imagem";
   };
@@ -258,7 +258,7 @@ export default async function SinglePost({ params }: { params: Promise<{ slug: s
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {relatedPosts.map((related) => {
-                  const thumb = related._embedded?.['wp:featuredmedia']?.[0]?.source_url;
+                  const thumb = fixMediaUrl(related._embedded?.['wp:featuredmedia']?.[0]?.source_url ?? '');
                   const relCat = related._embedded?.['wp:term']?.[0]?.[0]?.name;
                   return (
                     <Link key={related.id} href={`/${related.slug}`} className="group flex flex-col rounded-2xl overflow-hidden border border-gray-100 hover:shadow-md transition-shadow">

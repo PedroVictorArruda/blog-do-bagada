@@ -65,7 +65,15 @@ export interface WpBanner {
   };
 }
 
-const API_URL = 'http://blogdobagada.com.br/?rest_route=/wp/v2';
+const WORDPRESS_INTERNAL = process.env.WORDPRESS_URL || 'http://blogdobagada.com.br';
+const WORDPRESS_PUBLIC = process.env.WORDPRESS_PUBLIC_URL || WORDPRESS_INTERNAL;
+const API_URL = `${WORDPRESS_INTERNAL}/?rest_route=/wp/v2`;
+
+export function fixMediaUrl(url: string): string {
+  if (!url) return url;
+  return url.replace('http://blogdobagada.com.br', WORDPRESS_PUBLIC)
+            .replace('https://blogdobagada.com.br', WORDPRESS_PUBLIC);
+}
 
 export async function getBannersByFormat(format: string, slotIndex?: number): Promise<{ imageUrl: string; linkUrl: string } | null> {
   try {

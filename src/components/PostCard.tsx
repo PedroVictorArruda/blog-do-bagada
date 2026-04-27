@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { WpPost } from "@/lib/wp";
+import { WpPost, fixMediaUrl } from "@/lib/wp";
 import { Clock } from "lucide-react";
 import { getRelativeTime } from "@/lib/utils";
 
@@ -42,7 +42,7 @@ interface PostCardProps {
 export default function PostCard({ post }: PostCardProps) {
   const getFeaturedImageUrl = (p: WpPost) => {
     const media = p._embedded?.['wp:featuredmedia'];
-    if (media && media.length > 0 && media[0].source_url) return media[0].source_url;
+    if (media && media.length > 0 && media[0].source_url) return fixMediaUrl(media[0].source_url);
     return "https://via.placeholder.com/800x450.png?text=Sem+Imagem";
   };
 

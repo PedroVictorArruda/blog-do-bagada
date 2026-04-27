@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { WpPost } from "@/lib/wp";
+import { WpPost, fixMediaUrl } from "@/lib/wp";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay, EffectFade } from 'swiper/modules';
 import { Clock } from "lucide-react";
@@ -22,7 +22,7 @@ export default function FeaturedSwiper({ posts }: FeaturedSwiperProps) {
   const getFeaturedImageUrl = (post: WpPost) => {
     const media = post._embedded?.['wp:featuredmedia'];
     if (media && media.length > 0 && media[0].source_url) {
-      return media[0].source_url;
+      return fixMediaUrl(media[0].source_url);
     }
     return "https://via.placeholder.com/1200x600.png?text=Sem+Imagem";
   };
