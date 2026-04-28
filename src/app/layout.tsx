@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import TopBanner from '@/components/TopBanner';
 import WhatsAppPopup from '@/components/WhatsAppPopup';
 import { getCategories } from '@/lib/wp';
 
@@ -76,9 +75,8 @@ export default async function RootLayout({
         />
       </head>
       <body className="antialiased text-gray-900 bg-gray-50 flex flex-col min-h-screen" suppressHydrationWarning>
-        <TopBanner />
         <Header categories={categories} />
-        <div className="flex-grow">
+        <div className="flex-grow pt-10 md:pt-14">
           {children}
         </div>
         <Footer categories={categories} />

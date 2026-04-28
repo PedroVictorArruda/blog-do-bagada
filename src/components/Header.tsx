@@ -18,8 +18,20 @@ export default function Header({ categories = [] }: HeaderProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20 md:h-28">
 
-          {/* Logo */}
-          <div className="flex-shrink-0 flex items-center">
+          {/* Logo + Foto de perfil */}
+          <div className="flex-shrink-0 flex items-end">
+            <Link href="/">
+              <Image
+                src="/perfil-logo.png"
+                alt="Foto do dono"
+                width={500}
+                height={500}
+                quality={100}
+                sizes="800px 600px"
+                className="h-20 md:h-28 w-auto object-contain object-bottom shrink-0"
+                priority
+              />
+            </Link>
             <Link href="/" className="block">
               <Image
                 src="/logo.png"
@@ -33,7 +45,7 @@ export default function Header({ categories = [] }: HeaderProps) {
           </div>
 
           {/* Nav Desktop */}
-          <nav className="hidden md:flex items-center space-x-6 overflow-x-auto">
+          <nav className="hidden ml-10 xl:flex items-center space-x-6 overflow-x-auto">
             {categories.map((cat) => (
               <Link
                 key={cat.id}
@@ -52,7 +64,7 @@ export default function Header({ categories = [] }: HeaderProps) {
                 type="text"
                 name="q"
                 placeholder="Pesquisar..."
-                className="pl-4 pr-10 py-2 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-48 lg:w-64 bg-gray-50 transition-all"
+                className="pl-4 pr-10 py-2 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-32 lg:w-44 bg-gray-50 transition-all"
               />
               <button type="submit" className="absolute right-3 top-2.5 text-gray-400 hover:text-blue-600 transition-colors">
                 <Search className="h-4 w-4" />
